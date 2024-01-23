@@ -143,6 +143,52 @@ pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
     }
 }
 
+pub fn setRowDynamic(
+    storage: *Archetype,
+    row_index: u32,
+    names: []const StringTable.Index,
+    components: []const u8,
+    sizes: []const usize,
+    alignments: []const u16,
+    type_ids: []const u32,
+) void {
+    if (comp.is_debug) {
+        assert(storage.columns.len - 1 == names.len);
+        assert(names.len == sizes.len);
+        assert(names.len == alignments.len);
+        assert(names.len == type_ids.len);
+    }
+    var offset: usize = 0;
+    for (names, 0..) |name, i| {
+        if (comp.is_debug) {
+            assert(name != 0); // From what i understand, .id is always 0. Can't change id
+        }
+        storage.setDynamic(row_index, name, components[offset .. offset + sizes[i]], alignments[i], type_ids[i]);
+        offset += sizes[i];
+    }
+}
+
+pub fn setRowDynamic2(
+    storage: *Archetype,
+    row_index: u32,
+    names: []const StringTable.Index,
+    components: []const []const u8,
+    alignments: []const u16,
+    type_ids: []const u32,
+) void {
+    if (comp.is_debug) {
+        assert(storage.columns.len - 1 == names.len);
+        assert(names.len == alignments.len);
+        assert(names.len == type_ids.len);
+    }
+    for (names, 0..) |name, i| {
+        if (comp.is_debug) {
+            assert(name != 0); // From what i understand, .id is always 0. Can't change id
+        }
+        storage.setDynamic(row_index, name, components[i], alignments[i], type_ids[i]);
+    }
+}
+
 /// Sets the value of the named components (columns) for the given row in the table.
 pub fn set(storage: *Archetype, row_index: u32, name: StringTable.Index, component: anytype) void {
     const ColumnType = @TypeOf(component);
