@@ -653,8 +653,8 @@ pub fn ArchetypeIterator(comptime all_components: anytype) type {
             if (consideration.len == 0) return false;
             var buf: [2048]u8 = undefined;
             switch (iter.query) {
-                .all => {
-                    for (iter.query.all) |namespace| {
+                .all => |all| {
+                    for (all) |namespace| {
                         switch (namespace) {
                             inline else => |components| {
                                 for (components) |component| {
@@ -677,7 +677,28 @@ pub fn ArchetypeIterator(comptime all_components: anytype) type {
                     }
                     return true;
                 },
-                .any => @panic("TODO"),
+                .any => |any| {
+                    for (any) |namespace| {
+                        switch (namespace) {
+                            inline else => |components| {
+                                for (components) |component| {
+                                    if (@typeInfo(@TypeOf(component)).Enum.fields.len == 0) continue;
+                                    const name = switch (component) {
+                                        inline else => |c| std.fmt.bufPrint(&buf, "{s}.{s}", .{ @tagName(namespace), @tagName(c) }) catch break,
+                                    };
+                                    const name_id = iter.entities.componentName(name);
+                                    for (consideration.columns) |column| {
+                                        if (column.name == name_id) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            },
+                        }
+                    }
+                    return false;
+                },
             }
         }
     };
