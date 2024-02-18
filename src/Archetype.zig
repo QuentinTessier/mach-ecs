@@ -127,7 +127,6 @@ pub fn setCapacity(storage: *Archetype, gpa: Allocator, new_capacity: usize) !vo
     storage.capacity = @as(u32, @intCast(new_capacity));
 }
 
-// TODO: comptime: missing a runtime variant of this function
 /// Sets the entire row's values in the table.
 pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
     comp.debugAssertRowType(storage, row);
@@ -140,6 +139,17 @@ pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
         const column = storage.columns[index];
         const column_values = @as([*]ColumnType, @ptrCast(@alignCast(column.values.ptr)));
         column_values[row_index] = @field(row, field.name);
+    }
+}
+
+pub fn setRowDynamic(storage: *Archetype, row_index: u32, components: []const struct {
+    name: StringTable.Index,
+    data: []const u8,
+    alignment: u16,
+    type_id: u32,
+}) void {
+    for (components) |component| {
+        storage.setDynamic(row_index, component.name, component.data, component.alignment, component.type_id);
     }
 }
 
